@@ -23,13 +23,9 @@ class OrderedModelBase(models.Model):
         abstract = True
 
     def _get_order_with_respect_to(self):
-        if type(self.order_with_respect_to) is str:
-            self.order_with_respect_to = (self.order_with_respect_to,)
         if self.order_with_respect_to is None:
-            raise AssertionError(('ordered model admin "{0}" has not specified "order_with_respect_to"; note that this '
-                'should go in the model body, and is not to be confused with the Meta property of the same name, '
-                'which is independent Django functionality').format(self))
-        return [(field, getattr(self, field)) for field in self.order_with_respect_to]
+            return None
+        return getattr(self, self.order_with_respect_to)
 
     def _valid_ordering_reference(self, reference):
         return self.order_with_respect_to is None or (
@@ -40,8 +36,8 @@ class OrderedModelBase(models.Model):
         qs = qs or self.__class__.objects.all()
         order_with_respect_to = self.order_with_respect_to
         if order_with_respect_to:
-            order_values = self._get_order_with_respect_to()
-            qs = qs.filter(*order_values)
+            value = self._get_order_with_respect_to()
+            qs = qs.filter((order_with_respect_to, value))
         return qs
 
     def save(self, *args, **kwargs):
